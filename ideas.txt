@@ -1,0 +1,5 @@
+Difficulties
+- easy (max 12 mistakes)
+- medium (max 7 mistakes)
+- hard (max 4 mistakes)
+
