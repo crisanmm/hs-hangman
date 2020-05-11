@@ -3,3 +3,12 @@ Difficulties
 - medium (max 7 mistakes)
 - hard (max 4 mistakes)
 
+-------------------------------------------
+Take 2
+    - command list
+    - spacing between characters in word to guess
+    - change difficulty 
+    - remember last difficulty
+    - game adapts to difficulty
+    - game lost functionality
+    
