@@ -1,17 +1,19 @@
 import Data.Char (toUpper, toLower)
 import Data.Maybe (fromMaybe, fromJust)
 import Control.Monad (when)
+import System.Directory (doesFileExist)
 import System.IO 
 import System.Exit
+
 import HangmanUtils
 
 data GameDifficulty = Easy | Medium | Hard deriving (Show, Eq)
 data GameState = Running | Finished deriving (Show, Eq)
 
-type WordToGuess = [Char];
-type WordToPrint = [Char];
-type FailedGuesses = [Char];
-type GuessChar = Char;
+type WordToGuess = [Char]
+type WordToPrint = [Char]
+type FailedGuesses = [Char]
+type GuessChar = Char
 
 printGraphic :: GameDifficulty -> WordToPrint -> FailedGuesses -> IO ()
 printGraphic gameDifficulty wordToPrint failedGuesses =
@@ -30,12 +32,20 @@ printGraphic gameDifficulty wordToPrint failedGuesses =
 
 getDifficulty :: IO (Bool, GameDifficulty)
 getDifficulty = do
-                lastDifficulty <- readFile "difficulty/lastDifficulty.txt";
-                case (map toLower lastDifficulty) of
-                    "easy" -> return (True, Easy)
-                    "medium" -> return (True, Medium)
-                    "hard" -> return (True, Hard)
-                    _ -> return (False, Medium)
+                let difficultyFile = "difficulty/lastDifficulty.txt"
+                fileExists <- doesFileExist difficultyFile
+                if not fileExists then
+                    do
+                    writeFile difficultyFile "medium"
+                    return (False, Medium)
+                else
+                    do
+                    lastDifficulty <- readFile difficultyFile
+                    case (map toLower lastDifficulty) of
+                        "easy" -> return (True, Easy)
+                        "medium" -> return (True, Medium)
+                        "hard" -> return (True, Hard)
+                        _ -> return (False, Medium)
 
 _getNewWordToPrint :: Int -> WordToGuess -> WordToPrint -> GuessChar -> WordToPrint
 _getNewWordToPrint index wordToGuess wordToPrint guessChar
@@ -103,29 +113,36 @@ showCommandList =
                 do
                 myPutStr "Enter command: "
                 command <- getLine
-                if (map toLower command) == "play" then -- play was entered
+                if length command == 0 then
+                    showCommandList 
+                else if (map toLower command) == "play" then -- play was entered
                     return ()
-                else if (splitBy ' ' (map toLower command)) !! 0 == "diff" then -- difficulty <difficulty> was entered
-                    do
-                    let difficultyFile = "difficulty/lastDifficulty.txt"
-                    let difficulty = ((splitBy ' ' command) !! 1)
-                    case (map toLower difficulty) of
-                        "easy"   -> do
-                                    putStrLn $ "Changed difficulty to easy, maximum of 12 mistakes."
-                                    writeFile difficultyFile difficulty
-                        "medium" -> do 
-                                    putStrLn $ "Changed difficulty to medium, maximum of 7 mistakes."
-                                    writeFile difficultyFile difficulty
-                        "hard"   -> do
-                                    putStrLn $ "Changed difficulty to hard, maximum of 4 mistakes."
-                                    writeFile difficultyFile difficulty
-                        _ -> putStrLn $ "Unknown difficulty, choose one from the following set {Easy, Medium, Hard}"
-                    showCommandList
+                else if (splitBy ' ' (map toLower command)) !! 0 == "diff" then -- difficulty was entered
+                    if length (splitBy ' ' (map toLower command)) == 2 then -- {difficulty} was entered
+                        do
+                        let difficultyFile = "difficulty/lastDifficulty.txt"
+                        let difficulty = ((splitBy ' ' command) !! 1)
+                        case (map toLower difficulty) of
+                            "easy"   -> do
+                                        putStrLn $ "Changed difficulty to easy, maximum of 12 mistakes. Previous mistakes will be shown."
+                                        writeFile difficultyFile difficulty
+                            "medium" -> do 
+                                        putStrLn $ "Changed difficulty to medium, maximum of 7 mistakes. Previous mistakes will be shown."
+                                        writeFile difficultyFile difficulty
+                            "hard"   -> do
+                                        putStrLn $ "Changed difficulty to hard, maximum of 4 mistakes. Previous mistakes will not be shown."
+                                        writeFile difficultyFile difficulty
+                            _ -> putStrLn $ "Unknown difficulty, choose one from the following set {Easy, Medium, Hard}"
+                        showCommandList
+                    else
+                        do
+                        putStrLn $ "Unknown difficulty, choose one from the following set {Easy, Medium, Hard}"
+                        showCommandList
                 else if (map toLower command) == "help" then -- help was entered
                     do
                     printHelp
                     showCommandList
-                else if (map toLower command) == "quit" then -- quit was entered
+                else if (map toLower command) == "quit" || (map toLower command) == "exit"  then -- quit/exit was entered
                     die ""
                 else -- command not recognized
                     do
